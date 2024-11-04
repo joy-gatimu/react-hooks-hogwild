@@ -1,65 +1,72 @@
 import React, { useState } from "react";
-import Nav from "./Nav";
-import HogTile from "./HogTile";
-import hogs from "../porkers_data";
-import HogForm from "./HogForm";
+import hogs from "../porkers_data"; 
+import HogTile from "../HogTile";
+import FilterSort from "../FilterSort";
+import NewHogForm from "../NewHogForm";
+import Nav from "../components/Nav";
+import 'semantic-ui-css/semantic.min.css';
+import '../index.css'
 
 function App() {
-  const [hogList, setHogList] = useState(hogs);
-  const [showDetails, setShowDetails] = useState({});
+  const [hogData, setHogData] = useState(hogs);
   const [filterGreased, setFilterGreased] = useState(false);
-  const [sortOption, setSortOption] = useState("");
-  const [hiddenHogs, setHiddenHogs] = useState({});
+  const [sortType, setSortType] = useState(null);
+  const [hiddenHogs, setHiddenHogs] = useState([]);
 
-  const toggleDetails = (name) => {
-    setShowDetails((prev) => ({ ...prev, [name]: !prev[name] }));
+  const getVisibleHogs = () => {
+    let filteredHogs = hogData;
+
+    if (filterGreased) {
+      filteredHogs = filteredHogs.filter((hog) => hog.greased);
+    }
+
+    if (sortType === "name") {
+      filteredHogs = filteredHogs.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortType === "weight") {
+      filteredHogs = filteredHogs.sort((a, b) => a.weight - b.weight);
+    }
+
+    return filteredHogs.filter((hog) => !hiddenHogs.includes(hog.name));
   };
 
-  const addHog = (newHog) => {
-    setHogList((prevList) => [...prevList, newHog]);
+  const addNewHog = (newHog) => {
+    setHogData([...hogData, newHog]);
   };
 
-  const hideHog = (name) => {
-    setHiddenHogs((prev) => ({ ...prev, [name]: true }));
+  const hideHog = (hogName) => {
+    setHiddenHogs([...hiddenHogs, hogName]);
   };
-
-  const filteredHogs = hogList
-    .filter((hog) => !hiddenHogs[hog.name])
-    .filter((hog) => (filterGreased ? hog.greased : true))
-    .sort((a, b) => {
-      if (sortOption === "name") return a.name.localeCompare(b.name);
-      if (sortOption === "weight") return a.weight - b.weight;
-      return 0;
-    });
 
   return (
     <div className="App">
       <Nav />
-      <div>
-        <button onClick={() => setFilterGreased(!filterGreased)}>
-          {filterGreased ? "Show All Hogs" : "Show Greased Hogs Only"}
-        </button>
-        <select onChange={(e) => setSortOption(e.target.value)} value={sortOption}>
-          <option value="">Sort By</option>
-          <option value="name">Name</option>
-          <option value="weight">Weight</option>
-        </select>
-      </div>
-      <HogForm addHog={addHog} />
-      <div className="ui grid container">
-        {filteredHogs.map((hog) => (
-          <HogTile
-            key={hog.name}
-            hog={hog}
-            showDetails={showDetails[hog.name]}
-            toggleDetails={toggleDetails}
-            hideHog={hideHog}
-          />
+
+      <h1>Porker App</h1>
+
+      <FilterSort
+        filterGreased={filterGreased}
+        setFilterGreased={setFilterGreased}
+        setSortType={setSortType}
+      />
+
+      <NewHogForm addNewHog={addNewHog} />
+
+      {/* Parent container with the required semantic UI grid classes */}
+      {/* <div className="ui grid container">
+        {getVisibleHogs().map((hog) => (
+          <HogTile key={hog.name} hog={hog} hideHog={hideHog} />
         ))}
-      </div>
+      </div> */}
+      <div className="ui grid container">
+  {getVisibleHogs().map((hog) => (
+    <div className="ui eight wide column" key={hog.name}>
+      <HogTile hog={hog} hideHog={hideHog} />
+    </div>
+  ))}
+</div>
+
     </div>
   );
 }
 
 export default App;
-
